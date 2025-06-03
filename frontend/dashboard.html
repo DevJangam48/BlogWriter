@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Your Blogs</title>
+  </head>
+  <body class="bg-gray-100">
+    <header class="bg-white shadow p-4 flex justify-between">
+      <h1 class="text-2xl font-bold text-blue-600">MyBlog</h1>
+      <nav>
+        <!-- All Blog button -->
+        <a
+          href="index.html"
+          class="inline-block bg-gradient-to-r from-gray-300 to-gray-400 hover:from-gray-400 hover:to-gray-500 text-gray-800 font-semibold px-4 py-2 rounded shadow transition duration-200 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-gray-400 mr-2"
+        >
+          All Blog
+        </a>
+
+        <!-- New Blog button -->
+        <a
+          href="create.html"
+          class="inline-block bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 text-white font-semibold px-4 py-2 rounded shadow transition duration-200 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-400 mr-2"
+        >
+          New Blog
+        </a>
+
+        <!-- Logout button -->
+        <button
+          onclick="logout()"
+          class="inline-block bg-gradient-to-r from-red-500 to-red-700 hover:from-red-600 hover:to-red-800 text-white font-semibold px-4 py-2 rounded shadow transition duration-200 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-red-400"
+        >
+          Logout
+        </button>
+      </nav>
+    </header>
+
+    <main class="p-6">
+      <h2 class="text-xl font-semibold mb-4">Your Blogs</h2>
+      <div id="user-blogs" class="grid gap-4"></div>
+    </main>
+
+    <script>
+      const token = localStorage.getItem("token");
+      if (!token) {
+        alert("Please login first!");
+        window.location.href = "login.html";
+      }
+
+      function logout() {
+        localStorage.removeItem("token");
+        window.location.href = "login.html";
+      }
+
+      fetch("http://localhost:5000/api/blogs/user/all", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          const blogList = document.getElementById("user-blogs");
+          data.forEach((blog) => {
+            const div = document.createElement("div");
+            div.className = "bg-white p-4 rounded shadow";
+            div.innerHTML = `
+          <h3 class="text-lg font-bold">${blog.title}</h3>
+          <p>${blog.content.slice(0, 100)}...</p>
+          <p class="text-sm text-gray-500">By ${blog.author}</p>
+          <div class="mt-2 space-x-2">
+            <!-- Edit button -->
+            <button
+              onclick="editBlog('${blog._id}')"
+              class="bg-green-500 hover:bg-green-600 text-white font-semibold px-3 py-1 rounded shadow transition duration-200 focus:outline-none focus:ring-2 focus:ring-green-400"
+            >
+              Edit
+            </button>
+            <!-- Delete button -->
+            <button
+              onclick="deleteBlog('${blog._id}')"
+              class="bg-red-500 hover:bg-red-600 text-white font-semibold px-3 py-1 rounded shadow transition duration-200 focus:outline-none focus:ring-2 focus:ring-red-400"
+            >
+              Delete
+            </button>
+          </div>
+        `;
+            blogList.appendChild(div);
+          });
+        });
+
+      function editBlog(id) {
+        window.location.href = `edit.html?id=${id}`;
+      }
+
+      function deleteBlog(id) {
+        if (!confirm("Are you sure you want to delete this blog?")) return;
+
+        fetch(`http://localhost:5000/api/blogs/${id}`, {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }).then((res) => {
+          if (res.ok) {
+            alert("Blog deleted!");
+            location.reload();
+          } else {
+            alert("Error deleting blog");
+          }
+        });
+      }
+    </script>
+  </body>
+</html>

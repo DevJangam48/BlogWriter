@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Blog Platform - Home</title>
+  </head>
+  <body class="bg-gray-100">
+    <header class="bg-white shadow p-4 flex justify-between">
+      <h1 class="text-2xl font-bold text-blue-600">MyBlog</h1>
+      <nav id="nav-links">
+        <a
+          href="login.html"
+          class="text-blue-500 hover:underline mx-2"
+          id="login-link"
+          >Login</a
+        >
+        <a
+          href="register.html"
+          class="text-blue-500 hover:underline mx-2"
+          id="register-link"
+          >Register</a
+        >
+        <a
+          href="create.html"
+          class="bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 text-white font-semibold px-4 py-2 rounded shadow transition duration-200 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-400 ml-4"
+        >
+          New Blog
+        </a>
+        <button
+          id="logout-btn"
+          class="bg-gradient-to-r from-red-500 to-red-700 hover:from-red-600 hover:to-red-800 text-white font-semibold px-4 py-2 rounded shadow transition duration-200 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-red-400 ml-4 hidden"
+        >
+          Logout
+        </button>
+      </nav>
+    </header>
+
+    <main class="p-6">
+      <!-- Blog details section (only shown if ?id= is present) -->
+      <div id="blog-details-section" class="container mx-auto p-6 hidden">
+        <a
+          href="index.html"
+          class="inline-block bg-gradient-to-r from-gray-300 to-gray-400 hover:from-gray-400 hover:to-gray-500 text-gray-800 font-semibold px-4 py-2 rounded shadow transition duration-200 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-gray-400 mt-4"
+        >
+          ← Back
+        </a>
+        <div id="blog-post" class="bg-white rounded shadow p-6">
+          <h1 id="title" class="text-3xl font-bold mb-4">Loading title...</h1>
+          <p id="author" class="text-gray-500 mb-2">Author: ...</p>
+          <p id="date" class="text-gray-400 mb-4">Date: ...</p>
+          <p
+            id="content"
+            class="text-gray-800 leading-relaxed whitespace-pre-wrap"
+          >
+            <span
+              id="loading-spinner"
+              class="inline-block animate-spin border-4 border-blue-200 border-t-blue-600 rounded-full w-6 h-6 align-middle"
+            ></span>
+            <span id="loading-text">Loading content...</span>
+          </p>
+          <p id="not-found" class="text-blue-500 mt-4 hidden">
+            Thank you for visiting!
+          </p>
+        </div>
+      </div>
+      <!-- Blog list section (only shown if no ?id= is present) -->
+      <div id="blog-list-section">
+        <h2 class="text-xl font-semibold mb-4">Recent Blogs</h2>
+        <div id="blog-list" class="grid gap-4"></div>
+        <div id="blog-list-loading" class="flex justify-center mt-8">
+          <span
+            class="inline-block animate-spin border-4 border-blue-200 border-t-blue-600 rounded-full w-8 h-8 align-middle"
+          ></span>
+          <span class="ml-2 text-gray-500">Loading blogs...</span>
+        </div>
+        <div id="blog-list-error" class="text-red-500 mt-4 hidden">
+          Failed to load blogs.
+        </div>
+      </div>
+    </main>
+
+    <script>
+      // Hide/show nav links based on login status
+      const token = localStorage.getItem("token");
+      if (token) {
+        document.getElementById("login-link").style.display = "none";
+        document.getElementById("register-link").style.display = "none";
+        document.getElementById("logout-btn").classList.remove("hidden");
+      }
+
+      document.getElementById("logout-btn").onclick = function () {
+        localStorage.removeItem("token");
+        window.location.reload();
+      };
+
+      // Helper function to strip HTML tags for preview
+      function stripHtml(html) {
+        const tmp = document.createElement("div");
+        tmp.innerHTML = html;
+        return tmp.textContent || tmp.innerText || "";
+      }
+
+      function formatDate(dateStr) {
+        const date = new Date(dateStr);
+        return date.toLocaleDateString(undefined, {
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+      }
+
+      // Routing logic: show blog details if ?id= is present, else show blog list
+      const params = new URLSearchParams(window.location.search);
+      const blogId = params.get("id");
+
+      if (blogId) {
+        // Show blog details section, hide blog list
+        // ...inside the if (blogId) { ... } block, before fetch...
+
+        document
+          .getElementById("blog-details-section")
+          .classList.remove("hidden");
+        document.getElementById("blog-list-section").classList.add("hidden");
+        document.getElementById("not-found").classList.add("hidden");
+        fetch(`http://localhost:5000/api/blogs/${blogId}`)
+          .then((res) => {
+            if (!res.ok) throw new Error("Not found");
+            return res.json();
+          })
+          .then((data) => {
+            if (!data || !data.title || !data.content) {
+              document.getElementById("not-found").classList.remove("hidden");
+              document.getElementById("loading-spinner").style.display = "none";
+              document.getElementById("loading-text").style.display = "none";
+              document.getElementById("title").textContent = "";
+              document.getElementById("author").textContent = "";
+              document.getElementById("date").textContent = "";
+              document.getElementById("content").innerHTML = "";
+              return;
+            }
+
+            document.getElementById("title").textContent = data.title;
+            document.getElementById("author").textContent =
+              "Author: " + (data.author || "Unknown");
+            document.getElementById("date").textContent =
+              "Date: " + formatDate(data.createdAt || data.date);
+            document.getElementById("content").innerHTML = data.content;
+            document.getElementById("loading-spinner").style.display = "none";
+            document.getElementById("loading-text").style.display = "none";
+          })
+          .catch((err) => {
+            document.getElementById("not-found").classList.remove("hidden");
+            document.getElementById("loading-spinner").style.display = "none";
+            document.getElementById("loading-text").style.display = "none";
+            console.error(err);
+          });
+      } else {
+        // Show blog list section, hide blog details
+        document.getElementById("blog-details-section").classList.add("hidden");
+        document.getElementById("blog-list-section").classList.remove("hidden");
+
+        fetch("http://localhost:5000/api/blogs")
+          .then((res) => res.json())
+          .then((data) => {
+            const list = document.getElementById("blog-list");
+            list.innerHTML = "";
+            if (data.length === 0) {
+              list.innerHTML =
+                '<div class="text-gray-500 text-center">No blogs found.</div>';
+            }
+            data.forEach((blog) => {
+              const div = document.createElement("div");
+              div.className =
+                "bg-white p-4 rounded shadow cursor-pointer hover:bg-gray-50 transition";
+              div.innerHTML = `
+                <h3 class="text-lg font-bold text-gray-800">${blog.title}</h3>
+                <div class="blog-preview text-gray-600">${stripHtml(
+                  blog.content
+                ).slice(0, 100)}${blog.content.length > 100 ? "..." : ""}</div>
+                <small class="text-gray-500">By ${
+                  blog.author
+                } &middot; ${formatDate(blog.createdAt || blog.date)}</small>
+              `;
+              div.addEventListener("click", function () {
+                window.location.href = `index.html?id=${blog._id}`;
+              });
+              list.appendChild(div);
+            });
+            document.getElementById("blog-list-loading").style.display = "none";
+          })
+          .catch((err) => {
+            document.getElementById("blog-list-loading").style.display = "none";
+            document
+              .getElementById("blog-list-error")
+              .classList.remove("hidden");
+            console.error(err);
+          });
+      }
+    </script>
+  </body>
+</html>

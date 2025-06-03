@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Blog Details</title>
+  </head>
+  <body class="bg-gray-100">
+    <header class="bg-white shadow p-4">
+      <div class="container mx-auto flex justify-between">
+        <a href="index.html" class="text-2xl font-bold text-blue-600">MyBlog</a>
+        <a href="login.html" class="text-blue-500 hover:underline">Login</a>
+      </div>
+    </header>
+
+    <main class="container mx-auto p-6">
+      <div id="blog-post" class="bg-white rounded shadow p-6">
+        <h1 id="title" class="text-3xl font-bold mb-4">Loading title...</h1>
+        <p id="author" class="text-gray-500 mb-2">Author: ...</p>
+        <p id="date" class="text-gray-400 mb-4">Date: ...</p>
+        <p
+          id="content"
+          class="text-gray-800 leading-relaxed whitespace-pre-wrap"
+        >
+          Loading content...
+        </p>
+      </div>
+    </main>
+
+    <script>
+      const params = new URLSearchParams(window.location.search);
+      const blogId = params.get("id");
+
+      if (!blogId) {
+        alert("Invalid blog ID");
+        window.location.href = "index.html";
+      }
+
+      fetch(`http://localhost:5000/api/blogs/${blogId}`)
+        .then((res) => res.json())
+        .then((data) => {
+          document.getElementById("title").textContent = data.title;
+          document.getElementById("author").textContent =
+            "Author: " + data.author;
+          document.getElementById("date").textContent =
+            "Date: " + new Date(data.createdAt || data.date).toLocaleString();
+          document.getElementById("content").textContent = data.content;
+        })
+        .catch((err) => {
+          alert("Failed to load blog");
+          console.error(err);
+          window.location.href = "index.html";
+        });
+    </script>
+  </body>
+</html>
